@@ -8,6 +8,7 @@ RIGHT = 1
 DOWN = 2
 LEFT = 3
 
+
 class TownEnv(discrete.DiscreteEnv):
     """
     Town environment for postman shortest path problem.
@@ -32,44 +33,41 @@ class TownEnv(discrete.DiscreteEnv):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, shape=(5, 6), num_ckpt=3, num_blocks=3):
+    def __init__(self, start, goal, blocks, shape=(5, 6)):
         if not isinstance(shape, (list, tuple)) or not len(shape) == 2:
             raise ValueError('shape argument must be a list/tuple of length 2')
 
+        # environment parameters
         self.shape = shape
+        self.nS = shape[0] * shape[1]
+        self.nA = 4
 
-        nS = shape[0] * shape[1]
-        nA = 4
+        self.start = start
+        self.goal = goal
+        self.blocks = blocks
 
-        MAX_Y = shape[0]
-        MAX_X = shape[1]
+        self.reset_env_dynamics(self.start, self.goal)
 
-        # special states
-        # SS = np.random.choice(np.arange(nS), num_ckpt+num_blocks+2, replace=False)
-        # self.start = SS[0]
-        # self.goal = SS[1]
-        # self.blocks = list(SS[2:num_blocks+2])
-        # self.checkpoints = list(SS[num_blocks+2:])
-        self.start = 20
-        self.goal = 7
-        self.blocks = [12, 13, 14]
-        self.checkpoints = [23]
+    def reset_env_dynamics(self, start, goal):
+        self.start = start
+        self.goal = goal
+
+        MAX_Y = self.shape[0]
+        MAX_X = self.shape[1]
 
         P = {}
-        grid = np.arange(nS).reshape(shape)
+        grid = np.arange(self.nS).reshape(self.shape)
         it = np.nditer(grid, flags=['multi_index'])
 
         while not it.finished:
             s = it.iterindex
             y, x = it.multi_index
 
-            P[s] = {a: [] for a in range(nA)}
+            P[s] = {a: [] for a in range(self.nA)}
 
-            is_done = lambda s: s == self.goal
+            is_done = lambda s: s == goal
             if is_done(s):
                 reward = 0.0
-            elif s in self.checkpoints:
-                reward = -0.1
             else:
                 reward = -1.0
 
@@ -93,32 +91,26 @@ class TownEnv(discrete.DiscreteEnv):
             it.iternext()
 
         # We always start in generated start state
-        isd = np.zeros(nS)
-        isd[self.start] = 1.0
+        isd = np.zeros(self.nS)
+        isd[start] = 1.0
 
-        # We expose the model of the environment for educational purposes
-        # This should not be used in any model-free learning algorithm
-        self.P = P
+        super(TownEnv, self).__init__(self.nS, self.nA, P, isd)
 
-        super(TownEnv, self).__init__(nS, nA, P, isd)
-
-    def _render(self, mode='human', close=False):
-        if close:
-            return
-
-        outfile = io.StringIO() if mode == 'ansi' else sys.stdout
-
+    def plot(self, start, goal, checkpoints):
+        """
+        Render the environment configuration
+        """
         grid = np.arange(self.nS).reshape(self.shape)
         it = np.nditer(grid, flags=['multi_index'])
         while not it.finished:
             s = it.iterindex
             y, x = it.multi_index
 
-            if self.s == s:
+            if start is not None and s == start:
                 output = " S "
-            elif s == self.goal:
+            elif goal is not None and s == goal:
                 output = " G "
-            elif s in self.checkpoints:
+            elif checkpoints is not None and s in checkpoints:
                 output = " X "
             elif s in self.blocks:
                 output = " # "
@@ -130,9 +122,11 @@ class TownEnv(discrete.DiscreteEnv):
             if x == self.shape[1] - 1:
                 output = output.rstrip()
 
-            outfile.write(output)
+            sys.stdout.write(output)
 
             if x == self.shape[1] - 1:
-                outfile.write("\n")
+                sys.stdout.write("\n")
 
             it.iternext()
+
+        print()
