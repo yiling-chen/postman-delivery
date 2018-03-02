@@ -1,6 +1,5 @@
-import numpy as np
 import sys
-import io
+import numpy as np
 from gym.envs.toy_text import discrete
 
 UP = 0
@@ -45,6 +44,7 @@ class TownEnv(discrete.DiscreteEnv):
         self.start = start
         self.goal = goal
         self.blocks = blocks
+        self.P = None
 
         self.reset_env_dynamics(self.start, self.goal)
 
@@ -89,6 +89,10 @@ class TownEnv(discrete.DiscreteEnv):
                 P[s][LEFT] = [(1.0, ns_left, reward, is_done(ns_left))]
 
             it.iternext()
+
+        # Expose the underlying dynamics of the environment
+        # Only for model-based method (DP)
+        self.P = P
 
         # We always start in generated start state
         isd = np.zeros(self.nS)

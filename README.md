@@ -18,3 +18,12 @@ Note: '#' are closed-blocks that the postman cannot pass.
 You can take actions in each direction (UP=0, RIGHT=1, DOWN=2, LEFT=3).
 Actions going off the edge leave you in your current state.
 You receive a reward of -1 at each step until you reach a terminal state.
+
+# Dependency
+You will need OpenAI `gym` and `numpy` installed to run the script.
+
+# Run
+run the following command to see the step-by-step visualization.
+```
+$ python agent.py
+```
