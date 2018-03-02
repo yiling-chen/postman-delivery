@@ -96,7 +96,7 @@ class Agent:
 
     def explore(self, use_dynamic_programming=True, num_episodes=5000, msg=None):
         if use_dynamic_programming:
-            return self.value_iteration()
+            return self.value_iteration(msg=msg)
         else:
             return self.q_learning(num_episodes, msg)
 
